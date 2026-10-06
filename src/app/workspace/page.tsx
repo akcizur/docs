@@ -113,7 +113,7 @@ export default function WorkspacePage() {
   };
 
   const createDocument = () => {
-    const parentId = selected && selected.parentId !== null ? selected.id : null;
+    const parentId = selected ? selected.id : null;
     const next = makeDocument('Nový dokument', parentId);
     setDocuments((current) => [...current, next]);
     setSelectedId(next.id);
