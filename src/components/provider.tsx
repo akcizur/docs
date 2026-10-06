@@ -1,7 +1,8 @@
 'use client';
 
 import { ClerkProvider, useAuth } from '@clerk/react';
-import { ConvexProvider, ConvexProviderWithClerk, ConvexReactClient } from 'convex/react';
+import { ConvexProvider, ConvexReactClient } from 'convex/react';
+import { ConvexProviderWithClerk } from 'convex/react-clerk';
 import { type ReactNode } from 'react';
 import SearchDialog from '@/components/search';
 import { RootProvider } from 'fumadocs-ui/provider/next';
