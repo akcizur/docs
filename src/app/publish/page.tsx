@@ -2,8 +2,13 @@
 
 import { anyApi } from 'convex/server';
 import { useQuery } from 'convex/react';
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-import BlockEditor from '@/components/workspace/BlockEditor';
+
+const BlockEditor = dynamic(() => import('@/components/workspace/BlockEditor'), {
+  ssr: false,
+  loading: () => <div className="min-h-[50vh] rounded-xl border border-white/10 bg-[#070707]" />,
+});
 import Link from 'next/link';
 
 export default function PublishPage() {
