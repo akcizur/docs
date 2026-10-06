@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
 import {
   Archive,
   ChevronRight,
@@ -152,8 +153,35 @@ export default function WorkspaceShell({
             <div className="border-t border-white/10 p-3">
               <div className="flex items-center gap-2 px-1 text-xs text-white/30">
                 <Settings2 size={14} />
-                <span>Realtime / local fallback</span>
+                <span className="min-w-0 flex-1">Realtime / local fallback</span>
               </div>
+              {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && (
+                <div className="mt-3 flex items-center justify-between gap-2 px-1">
+                  <Show when="signed-out">
+                    <div className="flex gap-2">
+                      <SignInButton>
+                        <button
+                          type="button"
+                          className="rounded-md border border-white/10 px-2.5 py-1.5 text-[11px] text-white/60 hover:bg-white/5 hover:text-white"
+                        >
+                          Přihlásit
+                        </button>
+                      </SignInButton>
+                      <SignUpButton>
+                        <button
+                          type="button"
+                          className="rounded-md bg-white px-2.5 py-1.5 text-[11px] font-medium text-black hover:bg-white/90"
+                        >
+                          Registrace
+                        </button>
+                      </SignUpButton>
+                    </div>
+                  </Show>
+                  <Show when="signed-in">
+                    <UserButton />
+                  </Show>
+                </div>
+              )}
             </div>
           </aside>
         )}
