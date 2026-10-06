@@ -239,12 +239,14 @@ export default function WorkspacePage() {
         updatedAt: new Date().toISOString(),
       };
 
+      const shareUrl = createShareUrl(published);
+
       updateDocument(document.id, {
         published: true,
         updatedAt: published.updatedAt,
       });
 
-      return createShareUrl(published);
+      return shareUrl;
     },
     [updateDocument],
   );
