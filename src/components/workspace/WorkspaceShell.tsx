@@ -5,6 +5,7 @@ import {
   Archive,
   ChevronRight,
   FileText,
+  ExternalLink,
   Menu,
   Plus,
   RotateCcw,
@@ -181,6 +182,17 @@ export default function WorkspaceShell({
                   >
                     {selected.published ? 'Zrušit publikaci' : 'Publikovat'}
                   </button>
+                  {selected.published && (
+                    <Link
+                      href={'/publish?slug=' + encodeURIComponent(selected.id)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-md border border-white/10 p-2 text-white/45 hover:bg-white/5 hover:text-white"
+                      aria-label="Otevřít publikovaný dokument"
+                    >
+                      <ExternalLink size={15} />
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={() => onArchive(selected.id)}
