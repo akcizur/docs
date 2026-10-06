@@ -1,214 +1,255 @@
 'use client';
 
-import { anyApi } from 'convex/server';
-import { useMutation, useQuery } from 'convex/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import WorkspaceShell, {
-  type WorkspaceDocument,
-} from '@/components/workspace/WorkspaceShell';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import WorkspaceShell from '@/components/workspace/WorkspaceShell';
+import { createShareUrl } from '@/lib/workspace/share';
+import { loadWorkspace, saveWorkspace } from '@/lib/workspace/db';
+import type { WorkspaceDocument } from '@/lib/workspace/types';
 
-const STORAGE_KEY = 'akcizur-docs-workspace-v1';
-const CONVEX_ENABLED =
-  Boolean(process.env.NEXT_PUBLIC_CONVEX_URL) &&
-  Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+const createDocument = (parentId: string | null): WorkspaceDocument => {
+  const now = new Date().toISOString();
 
-const seed: WorkspaceDocument[] = [
-  {
-    id: 'welcome',
-    title: 'Vítej v AKCIZUR Docs',
-    content:
-      'Toto je Notion-like workspace. Obsah se ukládá lokálně; po připojení Convexu se stejný model synchronizuje realtime.',
-    parentId: null,
-    icon: '✦',
-    archived: false,
-    published: true,
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'architecture',
-    title: 'Architektura',
-    content:
-      'Fumadocs zůstává veřejnou dokumentací. Workspace je samostatná React vrstva a Convex běží jako externí realtime backend.',
-    parentId: null,
-    icon: '◇',
-    archived: false,
-    published: false,
-    updatedAt: new Date().toISOString(),
-  },
-];
-
-function makeDocument(title = 'Nový dokument', parentId: string | null = null): WorkspaceDocument {
   return {
     id: crypto.randomUUID(),
-    title,
+    title: 'Nový dokument',
     content: '',
     parentId,
     icon: '·',
     archived: false,
     published: false,
-    updatedAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   };
+};
+
+const collectSubtree = (documents: WorkspaceDocument[], id: string) => {
+  const result = new Set([id]);
+  const queue = [id];
+
+  while (queue.length) {
+    const current = queue.shift()!;
+    for (const document of documents) {
+      if (document.parentId === current && !result.has(document.id)) {
+        result.add(document.id);
+        queue.push(document.id);
+      }
+    }
+  }
+
+  return result;
+};
+
+function normalizeImportedDocuments(input: WorkspaceDocument[]): WorkspaceDocument[] {
+  const ids = new Set(input.map((document) => document.id));
+
+  return input.map((document) => ({
+    ...document,
+    parentId: document.parentId && ids.has(document.parentId) ? document.parentId : null,
+    icon: document.icon || '·',
+    title: document.title || 'Bez názvu',
+    content: typeof document.content === 'string' ? document.content : '',
+    archived: Boolean(document.archived),
+    published: Boolean(document.published),
+    createdAt: document.createdAt || new Date().toISOString(),
+    updatedAt: document.updatedAt || new Date().toISOString(),
+  }));
 }
 
-function LocalWorkspace() {
+export default function WorkspacePage() {
   const [documents, setDocuments] = useState<WorkspaceDocument[]>([]);
   const [selectedId, setSelectedId] = useState('');
+  const [ready, setReady] = useState(false);
+  const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      const parsed = raw ? (JSON.parse(raw) as WorkspaceDocument[]) : seed;
-      setDocuments(parsed);
-      const fromUrl = new URLSearchParams(window.location.search).get('id');
-      setSelectedId(
-        fromUrl && parsed.some((doc) => doc.id === fromUrl) ? fromUrl : parsed[0]?.id ?? '',
-      );
-    } catch {
-      setDocuments(seed);
-      setSelectedId(seed[0]?.id ?? '');
-    }
-  }, []);
+    let cancelled = false;
 
-  useEffect(() => {
-    if (documents.length > 0) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(documents));
-    }
-  }, [documents]);
+    loadWorkspace().then((loaded) => {
+      if (cancelled) return;
 
-  const update = (id: string, patch: Partial<WorkspaceDocument>) => {
-    setDocuments((current) =>
-      current.map((doc) =>
-        doc.id === id
-          ? { ...doc, ...patch, updatedAt: new Date().toISOString() }
-          : doc,
-      ),
-    );
-  };
+      setDocuments(loaded);
+      const requested = new URLSearchParams(window.location.search).get('id');
+      const selected =
+        requested && loaded.some((document) => document.id === requested)
+          ? requested
+          : loaded.find((document) => !document.archived)?.id ?? loaded[0]?.id ?? '';
 
-  const create = (parentId: string | null) => {
-    const next = makeDocument('Nový dokument', parentId);
-    setDocuments((current) => [...current, next]);
-    setSelectedId(next.id);
-  };
+      setSelectedId(selected);
+      setReady(true);
+    });
 
-  return (
-    <WorkspaceShell
-      documents={documents}
-      selectedId={selectedId}
-      onSelect={setSelectedId}
-      onCreate={create}
-      onUpdate={update}
-      onArchive={(id) => update(id, { archived: true, published: false })}
-      onRestore={(id) => update(id, { archived: false })}
-      onPublish={(id, published) => update(id, { published })}
-    />
-  );
-}
-
-function toWorkspaceDocument(document: any): WorkspaceDocument {
-  return {
-    id: String(document._id),
-    title: document.title,
-    content: document.content,
-    parentId: document.parentId ?? null,
-    icon: document.icon ?? '·',
-    archived: document.archived,
-    published: document.published,
-    updatedAt: new Date(document.updatedAt).toISOString(),
-  };
-}
-
-function ConvexWorkspace() {
-  const remote = useQuery(anyApi.documents.list, { includeArchived: true });
-  const createDocument = useMutation(anyApi.documents.create);
-  const updateDocument = useMutation(anyApi.documents.update);
-  const archiveDocument = useMutation(anyApi.documents.archive);
-  const restoreDocument = useMutation(anyApi.documents.restore);
-  const publishDocument = useMutation(anyApi.documents.publish);
-
-  const [selectedId, setSelectedId] = useState('');
-  const [drafts, setDrafts] = useState<Record<string, Partial<WorkspaceDocument>>>({});
-  const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
-  const documents = useMemo(() => {
-    const base = ((remote ?? []) as any[]).map(toWorkspaceDocument);
-    return base.map((document) => ({
-      ...document,
-      ...(drafts[document.id] ?? {}),
-    }));
-  }, [remote, drafts]);
-
-  useEffect(() => {
-    if (!selectedId && documents[0]) setSelectedId(documents[0].id);
-  }, [documents, selectedId]);
-
-  useEffect(() => {
     return () => {
-      Object.values(timers.current).forEach((timer) => clearTimeout(timer));
+      cancelled = true;
     };
   }, []);
 
-  const scheduleUpdate = (id: string, patch: Partial<WorkspaceDocument>) => {
-    setDrafts((current) => ({
-      ...current,
-      [id]: { ...(current[id] ?? {}), ...patch },
-    }));
+  useEffect(() => {
+    if (!ready) return;
 
-    if (timers.current[id]) clearTimeout(timers.current[id]);
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
 
-    timers.current[id] = setTimeout(async () => {
-      const data = {
-        id,
-        ...(patch.title !== undefined ? { title: patch.title } : {}),
-        ...(patch.content !== undefined ? { content: patch.content } : {}),
-        ...(patch.icon !== undefined ? { icon: patch.icon } : {}),
-        ...(patch.published !== undefined ? { published: patch.published } : {}),
-        ...(patch.parentId !== undefined && patch.parentId !== null
-          ? { parentId: patch.parentId }
-          : {}),
+    saveTimer.current = window.setTimeout(() => {
+      void saveWorkspace(documents);
+    }, 350);
+
+    return () => {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    };
+  }, [documents, ready]);
+
+  useEffect(() => {
+    if (!ready) return;
+
+    const syncSelection = () => {
+      const requested = new URLSearchParams(window.location.search).get('id');
+      if (requested && documents.some((document) => document.id === requested)) {
+        setSelectedId(requested);
+      }
+    };
+
+    window.addEventListener('popstate', syncSelection);
+    return () => window.removeEventListener('popstate', syncSelection);
+  }, [documents, ready]);
+
+  const selectDocument = useCallback((id: string) => {
+    setSelectedId(id);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('id', id);
+    window.history.replaceState({}, '', url);
+  }, []);
+
+  const updateDocument = useCallback((id: string, patch: Partial<WorkspaceDocument>) => {
+    setDocuments((current) =>
+      current.map((document) =>
+        document.id === id
+          ? {
+              ...document,
+              ...patch,
+              updatedAt: new Date().toISOString(),
+            }
+          : document,
+      ),
+    );
+  }, []);
+
+  const addDocument = useCallback(
+    (parentId: string | null) => {
+      const next = createDocument(parentId);
+      setDocuments((current) => [...current, next]);
+      selectDocument(next.id);
+    },
+    [selectDocument],
+  );
+
+  const archiveDocument = useCallback((id: string) => {
+    setDocuments((current) => {
+      const subtree = collectSubtree(current, id);
+      return current.map((document) =>
+        subtree.has(document.id)
+          ? {
+              ...document,
+              archived: true,
+              published: false,
+              updatedAt: new Date().toISOString(),
+            }
+          : document,
+      );
+    });
+
+    setSelectedId('');
+  }, []);
+
+  const restoreDocument = useCallback((id: string) => {
+    setDocuments((current) => {
+      const subtree = collectSubtree(current, id);
+      return current.map((document) =>
+        subtree.has(document.id)
+          ? {
+              ...document,
+              archived: false,
+              updatedAt: new Date().toISOString(),
+            }
+          : document,
+      );
+    });
+  }, []);
+
+  const deleteDocument = useCallback(
+    (id: string) => {
+      setDocuments((current) => {
+        const subtree = collectSubtree(current, id);
+        return current.filter((document) => !subtree.has(document.id));
+      });
+      setSelectedId('');
+    },
+    [],
+  );
+
+  const publishDocument = useCallback((id: string, published: boolean) => {
+    setDocuments((current) =>
+      current.map((document) =>
+        document.id === id
+          ? {
+              ...document,
+              published,
+              updatedAt: new Date().toISOString(),
+            }
+          : document,
+      ),
+    );
+  }, []);
+
+  const importDocuments = useCallback(
+    (incoming: WorkspaceDocument[]) => {
+      const normalized = normalizeImportedDocuments(incoming);
+      setDocuments(normalized);
+      selectDocument(normalized.find((document) => !document.archived)?.id ?? normalized[0]?.id ?? '');
+    },
+    [selectDocument],
+  );
+
+  const exportDocuments = useCallback(() => {
+    const payload = {
+      app: 'AKCIZUR Docs',
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      documents,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download =
+      'akcizur-docs-backup-' +
+      new Date().toISOString().slice(0, 10) +
+      '.json';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }, [documents]);
+
+  const shareDocument = useCallback(
+    async (document: WorkspaceDocument) => {
+      const published = {
+        ...document,
+        published: true,
+        updatedAt: new Date().toISOString(),
       };
 
-      try {
-        await updateDocument(data as any);
-        setDrafts((current) => {
-          const next = { ...current };
-          delete next[id];
-          return next;
-        });
-      } catch {
-        // Keep the draft locally when the network mutation fails.
-      }
-    }, 500);
-  };
+      updateDocument(document.id, {
+        published: true,
+        updatedAt: published.updatedAt,
+      });
 
-  const create = async (parentId: string | null) => {
-    const id = await createDocument({
-      title: 'Nový dokument',
-      content: '',
-      ...(parentId ? { parentId } : {}),
-      icon: '·',
-    });
-    setSelectedId(String(id));
-  };
+      return createShareUrl(published);
+    },
+    [updateDocument],
+  );
 
-  const archive = async (id: string) => {
-    await archiveDocument({ id: id as any });
-    if (selectedId === id) setSelectedId(documents.find((doc) => doc.id !== id)?.id ?? '');
-  };
-
-  const restore = async (id: string) => {
-    await restoreDocument({ id: id as any });
-  };
-
-  const publish = async (id: string, published: boolean) => {
-    await publishDocument({
-      id: id as any,
-      published,
-      ...(published ? { publicSlug: id } : {}),
-    });
-  };
-
-  if (remote === undefined) {
+  if (!ready) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#050505] text-sm text-white/40">
         Načítám workspace…
@@ -220,16 +261,16 @@ function ConvexWorkspace() {
     <WorkspaceShell
       documents={documents}
       selectedId={selectedId}
-      onSelect={setSelectedId}
-      onCreate={create}
-      onUpdate={scheduleUpdate}
-      onArchive={archive}
-      onRestore={restore}
-      onPublish={publish}
+      onSelect={selectDocument}
+      onCreate={addDocument}
+      onUpdate={updateDocument}
+      onArchive={archiveDocument}
+      onRestore={restoreDocument}
+      onDelete={deleteDocument}
+      onPublish={publishDocument}
+      onImport={importDocuments}
+      onExport={exportDocuments}
+      onShare={shareDocument}
     />
   );
-}
-
-export default function WorkspacePage() {
-  return CONVEX_ENABLED ? <ConvexWorkspace /> : <LocalWorkspace />;
 }
