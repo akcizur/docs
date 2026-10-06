@@ -22,7 +22,7 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { type ChangeEvent, type ReactNode, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import type { WorkspaceDocument } from '@/lib/workspace/types';
 
 const BlockEditor = dynamic(() => import('@/components/workspace/BlockEditor'), {
@@ -103,8 +103,23 @@ export default function WorkspaceShell({
   const [errorState, setErrorState] = useState('');
   const importRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const selected = documents.find((document) => document.id === selectedId) ?? null;
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const byId = useMemo(() => new Map(documents.map((document) => [document.id, document])), [documents]);
 
   const normalDocuments = useMemo(() => {
@@ -325,13 +340,14 @@ export default function WorkspaceShell({
               <label className="flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-2">
                 <Search size={14} className="text-white/35" />
                 <input
+                  ref={searchRef}
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Hledat názvy a obsah"
                   className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/25"
                 />
                 <kbd className="hidden rounded border border-white/10 px-1.5 py-0.5 text-[9px] text-white/20 sm:block">
-                  Ctrl K
+                  {typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform) ? '⌘ K' : 'Ctrl K'}
                 </kbd>
               </label>
             </div>
