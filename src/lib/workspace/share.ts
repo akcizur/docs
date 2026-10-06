@@ -3,6 +3,8 @@ import type { WorkspaceDocument } from './types';
 
 const BASE_PATH = '/docs';
 const SHARE_VERSION = '1';
+const MAX_COVER_BYTES = 320_000;
+const MAX_SHARE_URL_LENGTH = 16_000;
 
 function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = '';
@@ -27,12 +29,17 @@ function base64UrlToBytes(value: string): Uint8Array {
 }
 
 export function encodeSharedDocument(document: WorkspaceDocument): string {
+  const coverDataUrl =
+    document.coverDataUrl && document.coverDataUrl.length <= MAX_COVER_BYTES
+      ? document.coverDataUrl
+      : undefined;
+
   const payload = JSON.stringify({
     v: SHARE_VERSION,
     title: document.title,
     content: document.content,
     icon: document.icon,
-    coverDataUrl: document.coverDataUrl,
+    coverDataUrl,
     published: document.published,
     updatedAt: document.updatedAt,
   });
@@ -52,7 +59,11 @@ export function decodeSharedDocument(token: string): Partial<WorkspaceDocument> 
       content: typeof payload.content === 'string' ? payload.content : '',
       icon: typeof payload.icon === 'string' ? payload.icon : '·',
       coverDataUrl:
-        typeof payload.coverDataUrl === 'string' ? payload.coverDataUrl : undefined,
+        typeof payload.coverDataUrl === 'string' &&
+        payload.coverDataUrl.length <= MAX_COVER_BYTES &&
+        /^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(payload.coverDataUrl)
+          ? payload.coverDataUrl
+          : undefined,
       published: payload.published !== false,
       updatedAt:
         typeof payload.updatedAt === 'string' ? payload.updatedAt : new Date().toISOString(),
@@ -64,5 +75,13 @@ export function decodeSharedDocument(token: string): Partial<WorkspaceDocument> 
 
 export function createShareUrl(document: WorkspaceDocument): string {
   const token = encodeSharedDocument(document);
-  return window.location.origin + BASE_PATH + '/publish/#d=' + token;
+  const url = window.location.origin + BASE_PATH + '/publish/#d=' + token;
+
+  if (url.length > MAX_SHARE_URL_LENGTH) {
+    throw new Error(
+      'Dokument je pro sdílený odkaz příliš velký. Použij Zálohu JSON nebo zkrať obsah.',
+    );
+  }
+
+  return url;
 }
