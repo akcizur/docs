@@ -22,7 +22,7 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { ChangeEvent, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, type ReactNode, useMemo, useRef, useState } from 'react';
 import type { WorkspaceDocument } from '@/lib/workspace/types';
 
 const BlockEditor = dynamic(() => import('@/components/workspace/BlockEditor'), {
@@ -164,7 +164,7 @@ export default function WorkspaceShell({
     });
   };
 
-  const renderNode = (document: WorkspaceDocument, depth = 0, visited = new Set<string>()): JSX.Element | null => {
+  const renderNode = (document: WorkspaceDocument, depth = 0, visited = new Set<string>()): ReactNode => {
     if (visited.has(document.id)) return null;
     const nextVisited = new Set(visited).add(document.id);
     const children = childrenOf.get(document.id) ?? [];
