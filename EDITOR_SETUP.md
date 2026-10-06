@@ -1,191 +1,141 @@
-# 📝 Editor Setup - Průvodce instalací
+# Workspace / Editor Setup
 
-Kompletní průvodce nastavením live editoru pro vaši dokumentaci.
+AKCIZUR Docs používá pro GitHub Pages-only režim čistě browserový editor.
 
-## Instalace
+## Spuštění
 
 ```bash
 npm install
 npm run dev
 ```
 
-Poté přejdi na: **http://localhost:3000/editor**
+Editor otevři na:
 
-## Funkce
+`http://localhost:3000/docs/workspace`
 
-### ✨ Hlavní vlastnosti
+## Editor
 
-- **🎨 Rozhraní v češtině** - Plně lokalizované
-- **📝 Live editable** - Edituj soubory přímo v prohlížeči
-- **💾 Automatické ukládání** - Každých 30 sekund
-- **📥 Export** - MD, TXT, DOCX, PDF
-- **📁 Správce souborů** - Levý panel pro výběr dokumentů
-- **🌓 Dark Mode** - Podpora tmavého tématu
+Workspace používá BlockNote.
 
-### Klávesové zkratky
+Podporuje:
 
-| Klávesa | Akce |
-|---------|------|
-| `Ctrl+S` | Uložit soubor |
-| `Ctrl+/` | Komentář |
-| `Tab` | Odsazení |
-| `Shift+Tab` | Zmenšit odsazení |
+- blokové odstavce
+- nadpisy
+- seznamy
+- inline formátování
+- undo / redo
+- drag & drop bloků
+- slash menu
+- keyboard shortcuts editoru
+- dark UI
+- read-only veřejný režim
 
-## Architektura
+## Ukládání
 
-```
-app/
-├── editor/
-│   └── page.tsx              # Hlavní editor stránka
-├── api/
-│   └── editor/
-│       ├── files/route.ts    # Načtení seznamu souborů
-│       └── save/route.ts     # Uložení souboru
-└── components/
-    └── EditorPage.tsx        # Komponenta editoru
-```
+Primární úložiště je IndexedDB:
 
-## Integrace s repositářem
+`akcizur-docs / documents`
 
-### GitHub API integrация (volitelné)
+Záložní cesta je localStorage.
 
-Pro automatické commit do repositáře:
+Uložení probíhá automaticky po změně dokumentů s krátkým debounce intervalem.
 
-```typescript
-// app/api/editor/save/route.ts
-import { Octokit } = require('@octokit/rest');
+## Dokumenty
 
-const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN
-});
+Každý dokument obsahuje:
 
-// Commit změn
-await octokit.repos.createOrUpdateFileContents({
-  owner: 'AKCIZUR',
-  repo: 'docs',
-  path: `docs/${path}`,
-  message: `📝 Update: ${path}`,
-  content: Buffer.from(content).toString('base64'),
-  branch: 'main'
-});
-```
+- `id`
+- `title`
+- `content`
+- `parentId`
+- `icon`
+- `archived`
+- `published`
+- `coverDataUrl`
+- `createdAt`
+- `updatedAt`
 
-### Nastav Environment Variables
+Poddokumenty mohou být vnořené do libovolné hloubky.
 
-```bash
-# .env.local
-GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-GITHUB_OWNER=AKCIZUR
-GITHUB_REPO=docs
-```
+## Koš
 
-## Export formáty
+Archivace přesune dokument a celý jeho podstrom do koše.
 
-### Markdown (.md)
-Nativní export, zachová všechno formátování
+V koši je možné:
 
-### Text (.txt)
-Prostý text bez formátování
+- obnovit dokument,
+- obnovit celý podstrom,
+- trvale odstranit dokument a jeho podstrom.
 
-### Word (.docx)
-Vyžaduje: `npm install docx`
+## Záloha
 
-```typescript
-import { Document, Packer, Paragraph, TextRun } from 'docx';
+Workspace lze exportovat jako JSON:
 
-const doc = new Document({
-  sections: [{
-    children: [
-      new Paragraph({
-        text: content,
-        children: [new TextRun(content)]
-      })
-    ]
-  }]
-});
+`Záloha → JSON`
 
-const buffer = await Packer.toBuffer(doc);
-```
+Import:
 
-### PDF (.pdf)
-Vyžaduje: `npm install pdfkit html2pdf`
+`Import → vyber .json`
 
-```typescript
-import html2pdf from 'html2pdf.js';
+Při importu se ověří základní struktura dokumentů a rozbijí se neplatné parent vazby na kořen.
 
-const options = {
-  margin: 10,
-  filename: 'document.pdf',
-  image: { type: 'jpeg', quality: 0.98 },
-  html2canvas: { scale: 2 },
-  jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-};
+## Publikování
 
-html2pdf().set(options).from(content).save();
-```
+Publikace nepotřebuje server.
 
-## Statický export
+Dokument se zabalí do URL fragmentu:
 
-Pro produkční build (GitHub Pages):
+`/docs/publish/#d=<payload>`
+
+Payload je komprimovaný pomocí `fflate`.
+
+Fragment se neodesílá na server, takže GitHub Pages může dokument zobrazit z čistě statické stránky.
+
+### Omezení share URL
+
+URL má praktický limit velikosti. Proto je URL publikování vhodné hlavně pro běžné dokumenty.
+
+Velké přílohy nebo velmi dlouhé dokumenty mají zůstat v lokálním workspace a měly by se přenášet přes JSON zálohu.
+
+## Cover
+
+Cover obrázek lze nastavit z lokálního souboru.
+
+UI limit:
+
+`5 MB`
+
+Cover se ukládá jako Data URL do lokální databáze. U velmi velkých obrázků se doporučuje před importem obrázek zmenšit.
+
+## GitHub Pages
+
+Produkční build:
 
 ```bash
 npm run build
 ```
 
-Generuje statické HTML v adresáři `out/`
+Next.js používá:
 
-## Jak to funguje
+`output: 'export'`
 
-1. **Úprava** → Uživatel edituje dokument v editoru
-2. **Auto-save** → Každých 30 sekund se obsah uloží
-3. **API** → `/api/editor/save` ukládá do `docs/` adresáře
-4. **Repository** → Změny se commituují do Git
-5. **Static gen** → Next.js generuje statické stránky
-6. **Deploy** → GitHub Pages publikuje automaticky
+Výstup:
 
-## Řešení problémů
+`out/`
 
-### Problém: "Cannot find module 'react-ace'"
+Deployment:
 
-```bash
-npm install react-ace ace-builds
-```
+`main → GitHub Actions → Pages artifact → GitHub Pages`
 
-### Problém: Editovač se nenačítá
+## Důležité
 
-Ujisti se, že:
-- `app/api/editor/files/route.ts` vrací správná data
-- Soubory jsou v adresáři `docs/`
-- API endpoint je dostupný
+Tato architektura záměrně nepoužívá:
 
-### Problém: Soubory se neukládají
+- Vercel runtime
+- Convex
+- Clerk
+- Next.js API routes pro workspace
+- serverové filesystem zápisy
+- runtime secrets
 
-Kontrola:
-```bash
-# Zkontroluj práva k zápisu
-ls -la docs/
-
-# Zkontroluj API response
-curl http://localhost:3000/api/editor/save
-```
-
-## Následující kroky
-
-1. ✅ Instalace dependencí: `npm install`
-2. ✅ Spuštění dev serveru: `npm run dev`
-3. ✅ Otevření editoru: http://localhost:3000/editor
-4. ✅ Konfigurace GitHub tokenu (volitelné)
-5. ✅ Produkční build: `npm run build`
-
-## Dokumentace
-
-- [Next.js API Routes](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)
-- [Ace Editor Docs](https://ace.c9.io/)
-- [Tailwind CSS](https://tailwindcss.com)
-- [Fumadocs](https://fumadocs.vercel.app/)
-
----
-
-**Vytvořeno**: 2026-08-05  
-**Verze**: 0.0.4  
-**Jazyk**: CZ 🇨🇿
+Celý workspace musí být schopen fungovat pouze ze statických souborů a browser API.
