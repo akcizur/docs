@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import BlockEditor from '@/components/workspace/BlockEditor';
 
 type DocumentNode = {
   id: string;
@@ -300,12 +301,11 @@ export default function WorkspacePage() {
                   placeholder="Bez názvu"
                 />
 
-                <textarea
+                <BlockEditor
+                  key={selected.id}
                   value={selected.content}
-                  onChange={(event) => updateSelected({ content: event.target.value })}
-                  disabled={selected.archived}
-                  placeholder="Začni psát…"
-                  className="min-h-[50vh] w-full resize-none bg-transparent text-[17px] leading-8 text-white/70 outline-none placeholder:text-white/20"
+                  editable={!selected.archived}
+                  onChange={(value) => updateSelected({ content: value })}
                 />
 
                 <div className="mt-12 grid gap-3 border-t border-white/10 pt-6 md:grid-cols-3">
