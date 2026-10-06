@@ -1,0 +1,342 @@
+'use client';
+
+import Link from 'next/link';
+import {
+  Archive,
+  ChevronRight,
+  FileText,
+  Menu,
+  Plus,
+  RotateCcw,
+  Search,
+  Send,
+  Settings2,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
+type DocumentNode = {
+  id: string;
+  title: string;
+  content: string;
+  parentId: string | null;
+  icon: string;
+  archived: boolean;
+  published: boolean;
+  updatedAt: string;
+};
+
+const STORAGE_KEY = 'akcizur-docs-workspace-v1';
+
+const seed: DocumentNode[] = [
+  {
+    id: 'welcome',
+    title: 'Vítej v AKCIZUR Docs',
+    content:
+      'Toto je nový Notion-like workspace. Obsah se nyní ukládá lokálně v prohlížeči; po připojení Convexu se stejný model přepne na realtime backend.',
+    parentId: null,
+    icon: '✦',
+    archived: false,
+    published: true,
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'architecture',
+    title: 'Architektura',
+    content:
+      'Next.js + Fumadocs zůstává veřejnou dokumentací. Workspace je samostatná React vrstva, která může komunikovat přímo s Convexem z GitHub Pages.',
+    parentId: null,
+    icon: '◇',
+    archived: false,
+    published: false,
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+function makeDocument(title = 'Nový dokument', parentId: string | null = null): DocumentNode {
+  return {
+    id: crypto.randomUUID(),
+    title,
+    content: '',
+    parentId,
+    icon: '·',
+    archived: false,
+    published: false,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export default function WorkspacePage() {
+  const [documents, setDocuments] = useState<DocumentNode[]>([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [trashOpen, setTrashOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? (JSON.parse(raw) as DocumentNode[]) : seed;
+      setDocuments(parsed);
+      const fromUrl = new URLSearchParams(window.location.search).get('id');
+      setSelectedId(fromUrl && parsed.some((doc) => doc.id === fromUrl) ? fromUrl : parsed[0]?.id ?? '');
+    } catch {
+      setDocuments(seed);
+      setSelectedId(seed[0]?.id ?? '');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (documents.length > 0) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(documents));
+    }
+  }, [documents]);
+
+  const visibleDocuments = useMemo(
+    () =>
+      documents
+        .filter((doc) => (trashOpen ? doc.archived : !doc.archived))
+        .filter((doc) => doc.title.toLowerCase().includes(search.toLowerCase())),
+    [documents, search, trashOpen],
+  );
+
+  const selected = documents.find((doc) => doc.id === selectedId) ?? null;
+
+  const updateSelected = (patch: Partial<DocumentNode>) => {
+    setDocuments((current) =>
+      current.map((doc) =>
+        doc.id === selectedId ? { ...doc, ...patch, updatedAt: new Date().toISOString() } : doc,
+      ),
+    );
+  };
+
+  const createDocument = () => {
+    const parentId = selected && selected.parentId !== null ? selected.id : null;
+    const next = makeDocument('Nový dokument', parentId);
+    setDocuments((current) => [...current, next]);
+    setSelectedId(next.id);
+    setTrashOpen(false);
+  };
+
+  const archiveSelected = () => {
+    if (!selected) return;
+    updateSelected({ archived: true });
+    const next = documents.find((doc) => doc.id !== selected.id && !doc.archived);
+    setSelectedId(next?.id ?? '');
+  };
+
+  const restoreSelected = () => {
+    if (!selected) return;
+    updateSelected({ archived: false });
+    setTrashOpen(false);
+  };
+
+  const publishSelected = () => {
+    if (!selected) return;
+    updateSelected({ published: !selected.published });
+  };
+
+  return (
+    <main className="min-h-screen bg-[#050505] text-white">
+      <div className="flex h-screen overflow-hidden border border-white/10">
+        {sidebarOpen && (
+          <aside className="flex w-[290px] shrink-0 flex-col border-r border-white/10 bg-[#090909]">
+            <div className="flex h-14 items-center justify-between border-b border-white/10 px-3">
+              <Link href="/docs" className="text-sm font-semibold tracking-tight hover:text-white/70">
+                AKCIZUR / DOCS
+              </Link>
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(false)}
+                className="rounded-md p-2 text-white/50 hover:bg-white/5 hover:text-white"
+                aria-label="Skrýt sidebar"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="flex gap-2 border-b border-white/10 p-3">
+              <button
+                type="button"
+                onClick={createDocument}
+                className="flex flex-1 items-center justify-center gap-2 rounded-md border border-white/15 bg-white px-3 py-2 text-xs font-semibold text-black hover:bg-white/90"
+              >
+                <Plus size={14} /> Nový
+              </button>
+              <button
+                type="button"
+                onClick={() => setTrashOpen((value) => !value)}
+                className={
+                  'rounded-md border px-3 py-2 text-xs ' +
+                  (trashOpen
+                    ? 'border-white/30 bg-white/10 text-white'
+                    : 'border-white/10 text-white/50')
+                }
+                aria-label="Koš"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+
+            <div className="border-b border-white/10 p-3">
+              <label className="flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-2">
+                <Search size={14} className="text-white/35" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Hledat"
+                  className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/25"
+                />
+              </label>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-2">
+              <div className="px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/25">
+                {trashOpen ? 'Koš' : 'Dokumenty'}
+              </div>
+              <div className="space-y-0.5">
+                {visibleDocuments.map((doc) => (
+                  <button
+                    key={doc.id}
+                    type="button"
+                    onClick={() => setSelectedId(doc.id)}
+                    className={
+                      'group flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm ' +
+                      (selectedId === doc.id
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/55 hover:bg-white/[0.04] hover:text-white')
+                    }
+                  >
+                    <span className="w-5 shrink-0 text-center text-xs">{doc.icon}</span>
+                    <span className="min-w-0 flex-1 truncate">{doc.title || 'Bez názvu'}</span>
+                    {doc.published && !doc.archived && <Send size={12} className="text-white/30" />}
+                    {!trashOpen && <ChevronRight size={12} className="text-white/15" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-white/10 p-3">
+              <div className="flex items-center gap-2 px-1 text-xs text-white/30">
+                <Settings2 size={14} />
+                <span>Static-first workspace</span>
+              </div>
+            </div>
+          </aside>
+        )}
+
+        <section className="flex min-w-0 flex-1 flex-col">
+          <header className="flex h-14 items-center justify-between border-b border-white/10 bg-[#070707]/95 px-4">
+            <div className="flex min-w-0 items-center gap-2">
+              {!sidebarOpen && (
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(true)}
+                  className="mr-1 rounded-md p-2 text-white/50 hover:bg-white/5 hover:text-white"
+                  aria-label="Zobrazit sidebar"
+                >
+                  <Menu size={17} />
+                </button>
+              )}
+              <span className="max-w-[42vw] truncate text-sm text-white/45">
+                {selected?.parentId ? 'Dokument / ' : 'Workspace / '}
+                <strong className="text-white/80">{selected?.title || 'Vyber dokument'}</strong>
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {selected && !selected.archived && (
+                <>
+                  <button
+                    type="button"
+                    onClick={publishSelected}
+                    className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-white/60 hover:bg-white/5 hover:text-white"
+                  >
+                    {selected.published ? 'Zrušit publikaci' : 'Publikovat'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={archiveSelected}
+                    className="rounded-md p-2 text-white/35 hover:bg-white/5 hover:text-white"
+                    aria-label="Archivovat"
+                  >
+                    <Archive size={16} />
+                  </button>
+                </>
+              )}
+
+              {selected?.archived && (
+                <button
+                  type="button"
+                  onClick={restoreSelected}
+                  className="flex items-center gap-2 rounded-md border border-white/10 px-3 py-1.5 text-xs text-white/65 hover:bg-white/5 hover:text-white"
+                >
+                  <RotateCcw size={13} /> Obnovit
+                </button>
+              )}
+            </div>
+          </header>
+
+          {selected ? (
+            <article className="flex-1 overflow-y-auto">
+              <div className="mx-auto w-full max-w-4xl px-6 py-14 md:px-12 md:py-20">
+                <div className="mb-8 flex items-center gap-3 text-xs text-white/25">
+                  <FileText size={15} />
+                  <span>
+                    {selected.archived ? 'V koši' : selected.published ? 'Publikováno' : 'Koncept'}
+                  </span>
+                  <span>•</span>
+                  <time dateTime={selected.updatedAt}>
+                    {new Date(selected.updatedAt).toLocaleString('cs-CZ')}
+                  </time>
+                </div>
+
+                <input
+                  value={selected.title}
+                  onChange={(event) => updateSelected({ title: event.target.value })}
+                  disabled={selected.archived}
+                  className="mb-8 w-full bg-transparent text-4xl font-semibold tracking-tight outline-none placeholder:text-white/20 md:text-5xl"
+                  placeholder="Bez názvu"
+                />
+
+                <textarea
+                  value={selected.content}
+                  onChange={(event) => updateSelected({ content: event.target.value })}
+                  disabled={selected.archived}
+                  placeholder="Začni psát…"
+                  className="min-h-[50vh] w-full resize-none bg-transparent text-[17px] leading-8 text-white/70 outline-none placeholder:text-white/20"
+                />
+
+                <div className="mt-12 grid gap-3 border-t border-white/10 pt-6 md:grid-cols-3">
+                  <div className="rounded-lg border border-white/10 p-4 text-xs text-white/30">
+                    <div className="mb-2 text-white/50">Hierarchie</div>
+                    <div>{selected.parentId ? 'Vnořený dokument' : 'Kořenový dokument'}</div>
+                  </div>
+                  <div className="rounded-lg border border-white/10 p-4 text-xs text-white/30">
+                    <div className="mb-2 text-white/50">Publikace</div>
+                    <div>{selected.published ? 'Veřejný' : 'Soukromý koncept'}</div>
+                  </div>
+                  <div className="rounded-lg border border-white/10 p-4 text-xs text-white/30">
+                    <div className="mb-2 text-white/50">Uložení</div>
+                    <div>Local-first / Convex-ready</div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          ) : (
+            <div className="flex flex-1 items-center justify-center p-8 text-center">
+              <div>
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03]">
+                  <FileText size={18} className="text-white/35" />
+                </div>
+                <h1 className="text-base font-medium">Žádný dokument</h1>
+                <p className="mt-2 text-sm text-white/35">Vytvoř první stránku pomocí tlačítka Nový.</p>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
+  );
+}
