@@ -2,95 +2,89 @@ import Link from 'next/link';
 
 const features = [
   {
-    title: 'Rychlost',
-    description: 'Serverové komponenty a chytré cachování pro okamžitou odezvu.',
+    title: 'Notion workspace',
+    description: 'Stránky, hierarchie, koš, publikace a lokální persistence bez serverového renderování.',
   },
   {
-    title: 'Bezpečí',
-    description: 'Ověřování pomocí magických odkazů a OAuth ihned k dispozici.',
+    title: 'Fumadocs',
+    description: 'Veřejná dokumentace zůstává jako rychlý statický obsah generovaný při buildu.',
   },
   {
-    title: 'Minimalismus',
-    description: 'Čisté, profesionální UI postavené na Tailwind CSS.',
+    title: 'Convex-ready',
+    description: 'Realtime backend lze připojit přímo z browseru bez rušení GitHub Pages deploymentu.',
   },
   {
-    title: 'Databáze',
-    description: 'Prisma + PostgreSQL – připraveno pro produkci.',
+    title: 'Clerk-ready',
+    description: 'Autentizace je připravená jako volitelná vrstva bez secret key v klientském buildu.',
   },
   {
-    title: 'API',
-    description: 'Route handlery a middleware pro backend bez starostí.',
+    title: 'GitHub Pages',
+    description: 'Celý frontend používá static export a deployuje se přes GitHub Actions do Pages.',
   },
   {
-    title: 'Responzivita',
-    description: 'Dokonalý vzhled na mobilu, tabletu i desktopu.',
+    title: 'Mobile first',
+    description: 'Workspace je navržený pro desktop, tablet i mobil s collapsible sidebarem.',
   },
 ];
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Hero */}
-      <section className="flex flex-col items-center justify-center text-center px-6 py-24 md:py-36">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-            Minimalistický vývoj
+      <section className="flex flex-col items-center justify-center px-6 py-24 text-center md:py-36">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-6 text-xs uppercase tracking-[0.28em] text-white/35">AKCIZUR / DOCS</div>
+          <h1 className="mb-6 text-4xl font-bold tracking-tight md:text-6xl">
+            Dokumentace
             <br />
-            <span className="text-white/70">s Next.js</span>
+            <span className="text-white/55">jako workspace.</span>
           </h1>
-          <p className="text-lg md:text-xl text-white/60 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Produkční dokumentace s databází a čistým UI.
+          <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-white/55 md:text-xl">
+            Fumadocs pro veřejné stránky a Notion-like workspace pro vlastní poznámky.
+            Static-first architektura připravená pro Convex realtime.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            
+          <div className="flex flex-col justify-center gap-3 sm:flex-row">
+            <Link
+              href="/workspace"
+              className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white px-6 py-3 font-medium text-black transition hover:bg-white/90"
+            >
+              Otevřít workspace
+            </Link>
             <Link
               href="/docs"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/20 text-white font-medium hover:bg-white/10 transition-colors"
+              className="inline-flex items-center justify-center rounded-lg border border-white/15 px-6 py-3 font-medium text-white transition hover:bg-white/10"
             >
               Dokumentace
             </Link>
           </div>
-        </div>      
+        </div>
       </section>
 
-      {/* Features */}
-      <section className="py-24 border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Vše, co potřebujete
-            </h2>
-            <p className="text-lg text-white/50 max-w-2xl mx-auto">
-              Předkonfigurované nástroje, které urychlí váš vývojový proces.
+      <section className="border-t border-white/10 py-24">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="mb-12">
+            <h2 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">Základ platformy</h2>
+            <p className="max-w-2xl text-base text-white/45">
+              Inspirace Notion klonem, ale architektura přizpůsobená GitHub Pages.
             </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {features.map((feature) => (
               <div
-                key={index}
-                className="p-6 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
+                key={feature.title}
+                className="rounded-xl border border-white/10 bg-white/[0.03] p-6 transition hover:bg-white/[0.06]"
               >
-                <h3 className="text-white text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-white/60">{feature.description}</p>
+                <h3 className="mb-2 text-lg font-semibold">{feature.title}</h3>
+                <p className="text-sm leading-6 text-white/45">{feature.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-
-
-      {/* Footer */}
       <footer className="border-t border-white/10 py-8">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-sm text-white/40">
-          <p>© 2026 RJ / Všechna práva vyhrazena.</p>
-          <div className="flex gap-6 mt-3 md:mt-0">
-            
-            <Link href="/terms" className="hover:text-white/70 transition-colors">
-              Podmínky
-            </Link>
-          </div>
+        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-3 px-6 text-sm text-white/35 md:flex-row">
+          <span>© 2026 RJ</span>
+          <span>Next.js · Fumadocs · Convex · Clerk</span>
         </div>
       </footer>
     </div>
