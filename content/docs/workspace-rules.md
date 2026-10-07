@@ -9,7 +9,7 @@ Workspace je pracovní plocha pro psaní, ne administrační dashboard.
 
 ## Hlavní hierarchie
 
-**Stránka → titul → obsah → navigace → sekundární akce → technické informace**
+Stránka → titul → obsah → navigace → sekundární akce → technické informace
 
 Dokument je vždy hlavní vizuální objekt.
 
@@ -22,41 +22,49 @@ Dokument je vždy hlavní vizuální objekt.
 - precise
 - fast
 
-Vyhnout se vzhledu CMS/admin panelu, přebytečným kartám, dekorativním gradientům a nadměrnému množství borderů.
+Vyhnout se vzhledu CMS a admin panelu, přebytečným kartám, dekorativním gradientům a nadměrnému množství borderů.
 
 ## Layout
 
 - sidebar: 260–280 px
 - topbar: 56–60 px
-- document canvas: 900–980 px maximum
+- document canvas: maximum 900–980 px
 - editor bez permanentního rámečku
 - dostatek volného prostoru
 
 ## Typografie
 
-~~~text
-Title       58 / 600
-H1          32 / 600
-H2          24 / 600
-Body        16 / 400
-Navigation  13 / 500
-Meta        11 / 400
-~~~
+Title: 58 / 600
+
+H1: 32 / 600
+
+H2: 24 / 600
+
+Body: 16 / 400
+
+Navigation: 13 / 500
+
+Meta: 11 / 400
 
 Používat jednu hlavní typografickou rodinu: Inter.
 
 ## Barvy
 
-~~~text
-Canvas       #0B0B0C
-Sidebar      #101011
-Elevated     #151516
-Primary      #F5F5F5
-Secondary    rgba(255,255,255,.62)
-Muted        rgba(255,255,255,.32)
-Subtle       rgba(255,255,255,.12)
-Hairline     rgba(255,255,255,.07)
-~~~
+Canvas: #0B0B0C
+
+Sidebar: #101011
+
+Elevated: #151516
+
+Primary: #F5F5F5
+
+Secondary: rgba(255,255,255,.62)
+
+Muted: rgba(255,255,255,.32)
+
+Subtle: rgba(255,255,255,.12)
+
+Hairline: rgba(255,255,255,.07)
 
 Barva komunikuje hierarchii; neslouží jako dekorace.
 
@@ -74,7 +82,7 @@ Povolené hlavní interakce:
 - drag/move
 - keyboard shortcuts
 
-Formatting toolbar je **contextual**, nikoliv permanentní.
+Formatting toolbar je contextual, nikoliv permanentní.
 
 ## Sidebar
 
@@ -86,7 +94,8 @@ Obsahuje:
 - Hledat
 - strom stránek
 - Koš
-- Záloha / Import
+- Záloha
+- Import
 
 Technické detaily jako IndexedDB, localStorage a GitHub Pages implementace nejsou součástí hlavní navigace.
 
@@ -94,7 +103,7 @@ Technické detaily jako IndexedDB, localStorage a GitHub Pages implementace nejs
 
 Vlevo: Workspace / Název stránky
 
-Vpravo: Publikovat a ···
+Vpravo: Publikovat a další akce
 
 Topbar musí zůstat vizuálně klidný.
 
