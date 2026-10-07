@@ -66,3 +66,25 @@ Každá další významná změna workspace má současně:
 2. aktualizovat tento `docs/CHAT-LOG.md`
 3. ověřit GitHub Pages build
 4. nevracet zpět dokument-first princip
+
+### ASSISTANT — current implementation
+
+Implementováno a zapsáno do repozitáře:
+
+- redesign workspace podle UX rules
+- editor jako transparentní document canvas
+- odstranění permanentního formatting toolbaru
+- širší dokumentová plocha
+- jednodušší sidebar a topbar
+- výraznější title hierarchy
+- odstranění technického footeru z dokumentu
+- jemnější metadata
+- nové UX dokumenty
+- průběžný chat log jako závazná součást workflow
+
+Dokumentace:
+- `docs/WORKSPACE-UX-RULES.md`
+- `docs/WORKSPACE-ROADMAP.md`
+- `docs/CHAT-LOG.md`
+
+Aktuální GitHub Pages workflow pro poslední commit je spuštěný; před zveřejněním je nutné ověřit zelený build.
