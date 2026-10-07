@@ -48,7 +48,7 @@ export default function BlockEditor({
         editor={editor}
         theme="dark"
         editable={editable}
-        formattingToolbar={false}
+        formattingToolbar={editable}
         onChange={() => onChange(JSON.stringify(editor.document))}
       />
     </div>
