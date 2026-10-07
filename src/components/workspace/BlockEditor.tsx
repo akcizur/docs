@@ -16,7 +16,9 @@ function parseContent(value: string): PartialBlock[] | undefined {
 
   try {
     const parsed = JSON.parse(value);
-    if (Array.isArray(parsed)) return parsed as PartialBlock[];
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed as PartialBlock[];
+    }
   } catch {
     // Legacy plain-text content is migrated into a paragraph block.
   }
@@ -41,11 +43,12 @@ export default function BlockEditor({
   });
 
   return (
-    <div className="min-h-[50vh] overflow-hidden rounded-xl border border-white/10 bg-[#070707]">
+    <div className="workspace-editor">
       <BlockNoteView
         editor={editor}
         theme="dark"
         editable={editable}
+        formattingToolbar={false}
         onChange={() => onChange(JSON.stringify(editor.document))}
       />
     </div>
