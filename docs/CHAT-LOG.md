@@ -88,3 +88,24 @@ Dokumentace:
 - `docs/CHAT-LOG.md`
 
 Aktuální GitHub Pages workflow pro poslední commit je spuštěný; před zveřejněním je nutné ověřit zelený build.
+
+
+### USER
+
+> OPRAV
+
+### ASSISTANT
+
+Prověřen poslední GitHub Pages build. Selhání nebylo v novém workspace UI, ale v nové MDX dokumentaci `content/docs/workspace-rules.md`: Fumadocs MDX stringifier skončil na `Maximum call stack size exceeded`.
+
+Oprava:
+- zjednodušen `content/docs/workspace-rules.md`
+- odstraněny problematické formátovací konstrukce
+- zachován obsah pravidel pro Workspace UX
+- poslední opravený commit: `0ee85ca43eda5610a95bcb046909e3d1ea064e4a`
+- GitHub Pages run #81 používá tento commit a aktuálně probíhá build.
+
+Současně zůstává zachován document-first redesign workspace a související pravidla v:
+- `docs/WORKSPACE-UX-RULES.md`
+- `docs/WORKSPACE-ROADMAP.md`
+- `docs/CHAT-LOG.md`
