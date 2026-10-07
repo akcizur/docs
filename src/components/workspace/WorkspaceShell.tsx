@@ -661,11 +661,11 @@ export default function WorkspaceShell({
                   </div>
                 )}
 
-                <div className="relative mb-6 flex flex-wrap items-center gap-2 text-[11px] text-white/30">
+                <div className="relative mb-7">
                   <button
                     type="button"
                     onClick={() => setIconOpen((value) => !value)}
-                    className="flex h-8 w-8 items-center justify-center rounded-[9px] border border-white/[0.09] bg-white/[0.03] text-sm text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                    className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.035] text-2xl text-white/75 transition hover:bg-white/[0.07] hover:text-white"
                     aria-label="Změnit ikonu"
                   >
                     {selected.icon}
@@ -689,13 +689,13 @@ export default function WorkspaceShell({
                     </div>
                   )}
 
-                  <span className="rounded-full border border-white/[0.08] bg-white/[0.025] px-2.5 py-1">
-                    {statusLabel}
-                  </span>
-                  <span className="text-white/15">•</span>
-                  <time dateTime={selected.updatedAt}>
-                    {new Date(selected.updatedAt).toLocaleString('cs-CZ')}
-                  </time>
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-white/25">
+                    <span>{statusLabel}</span>
+                    <span className="text-white/10">•</span>
+                    <time dateTime={selected.updatedAt}>
+                      {new Date(selected.updatedAt).toLocaleString('cs-CZ')}
+                    </time>
+                  </div>
                 </div>
 
                 <input
@@ -726,17 +726,7 @@ export default function WorkspaceShell({
                   </div>
                 )}
 
-                <div className="mt-10 border-t border-white/[0.07] pt-5">
-                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] text-white/25">
-                    <span>
-                      {selected.parentId
-                        ? `Umístění: ${byId.get(selected.parentId)?.title ?? 'Poddokument'}`
-                        : 'Kořenová stránka'}
-                    </span>
-                    <span>{selected.published ? 'Veřejný share odkaz' : 'Pouze lokálně'}</span>
-                    <span>Automaticky ukládáno</span>
-                  </div>
-                </div>
+                <div className="h-16" />
               </div>
             </article>
           ) : (
