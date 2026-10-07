@@ -1,6 +1,6 @@
+@import 'tailwindcss';
 @import '@blocknote/core/fonts/inter.css';
 @import '@blocknote/mantine/style.css';
-@import 'tailwindcss';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
 
@@ -9,6 +9,110 @@ html {
 }
 
 html > body[data-scroll-locked] {
-  margin-right: 0px !important;
+  margin-right: 0 !important;
   --removed-body-scroll-bar-size: 0px !important;
+}
+
+.workspace-editor {
+  width: 100%;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.workspace-editor .bn-container {
+  width: 100%;
+  max-width: none;
+  min-height: 58vh;
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  border: 0;
+  box-shadow: none;
+}
+
+.workspace-editor .bn-editor {
+  min-height: 58vh;
+  padding: 0 0 8rem;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.86);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.workspace-editor .bn-block {
+  max-width: 820px;
+}
+
+.workspace-editor .bn-block-content {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.workspace-editor .bn-block-content:focus {
+  outline: none;
+}
+
+.workspace-editor .bn-inline-content:focus {
+  outline: none;
+}
+
+.workspace-editor .bn-block-content[data-placeholder]::after {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.workspace-editor .bn-side-menu {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.workspace-editor .bn-side-menu button {
+  color: rgba(255, 255, 255, 0.38);
+  border-radius: 8px;
+}
+
+.workspace-editor .bn-side-menu button:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.workspace-editor .bn-suggestion-menu,
+.workspace-editor .bn-menu-dropdown {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  background: rgba(20, 20, 21, 0.98);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+}
+
+.workspace-editor .bn-suggestion-menu-item,
+.workspace-editor .bn-menu-item {
+  border-radius: 8px;
+}
+
+.workspace-editor .bn-suggestion-menu-item:hover,
+.workspace-editor .bn-suggestion-menu-item[aria-selected='true'],
+.workspace-editor .bn-menu-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.workspace-editor .bn-code-block {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.workspace-editor .bn-table-cell {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.workspace-editor [data-selected='true'] {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+@media (max-width: 768px) {
+  .workspace-editor .bn-editor {
+    min-height: 52vh;
+    padding-bottom: 6rem;
+  }
+
+  .workspace-editor .bn-block-content {
+    font-size: 15px;
+    line-height: 1.7;
+  }
 }
